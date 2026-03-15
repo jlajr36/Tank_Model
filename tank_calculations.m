@@ -42,10 +42,10 @@ for t = 1:length(tanks)
     %% Required flow for target fill time
     required_flow = tank.capacity / target_fill_time;
     
-    % Determine recommended pump
+    %% Determine recommended pump
     recommended_pump = "None";
     for p = 1:length(pumps)
-        boosted_flow = min(pumps(p).gpm * pumps(p).boost, pumps(p).gpm);
+        boosted_flow = pumps(p).gpm * pumps(p).boost;
         if boosted_flow >= required_flow
             recommended_pump = pumps(p).name;
             break;
