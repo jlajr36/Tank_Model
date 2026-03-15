@@ -5,22 +5,21 @@ using namespace std;
 
 const float PI = 3.141592653589793;
 
-float Volume (float diameter, float height) {
-    float r = diameter / 2;
-    return PI * r * r * height;
-}
-
 struct CylinderTank {
-    int capacity;
-    float diameter;
-    float height;
-    float volume;
+    int capacity;       // in gallons
+    float diameter;     // in feet
+    float height;       // in feet
+    float volume;       // in cubic feet
 
-    CylinderTank(int c, float d, float h) {
-        capacity = c;
-        diameter = d;
-        height = h;
-        volume = Volume(d, h);
+    CylinderTank(int c, float d, float h) 
+        : capacity(c), diameter(d), height(h) 
+    {
+        volume = Volume();
+    }
+
+    float Volume() const {
+        float r = diameter / 2;
+        return PI * r * r * height;
     }
 
     void printCylinderTankDetails() const {
