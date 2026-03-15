@@ -1,17 +1,20 @@
 #include <iostream>
 #include <vector>
 #include <iomanip> // For fixed and setprecision
+#include <algorithm> // For min
 
 using namespace std;
 
 const float PI = 3.141592653589793f;
 
+// ------------------------
+// Pipe Struct
+// ------------------------
 struct Pipe {
     int diameter_in;      
     float velocity_ft_s;  
     float resistance_factor; // 0 = no filter, 1 = fully blocked
 
-    // Constructor
     Pipe(int dia, float vel, float resistance = 0.0f)
         : diameter_in(dia), velocity_ft_s(vel), resistance_factor(resistance) {}
 
@@ -36,6 +39,9 @@ struct Pipe {
     }
 };
 
+// ------------------------
+// CylinderTank Struct
+// ------------------------
 struct CylinderTank {
     int capacity;
     float diameter;
@@ -85,15 +91,13 @@ struct CylinderTank {
         float t = drainTimeMinutes(pipe);
         cout << fixed << setprecision(2);
 
-        // Label pipe diameter and filter
         cout << " Drain out (" << pipe.diameter_in << "\"";
         if (pipe.resistance_factor > 0.0f)
-            cout << ", with filter";   // show if filter is applied
+            cout << ", with filter";  
         else
-            cout << ", without filter"; // explicitly show no filter
+            cout << ", without filter"; 
         cout << "): ";
 
-        // Show time or error
         if (t < 0)
             cout << "Flow is zero or negative, cannot calculate drain time." << endl;
         else
@@ -101,13 +105,47 @@ struct CylinderTank {
     }
 };
 
+// ------------------------
+// Pump Struct with Flow Boost
+// ------------------------
+struct Pump {
+    string name;
+    float max_gpm;
+    float flow_boost_factor; // How much the pump can boost pipe flow
+
+    Pump(string n, float gpm, float boost = 1.0f)
+        : name(n), max_gpm(gpm), flow_boost_factor(boost) {}
+};
+
+// ------------------------
+// Pump Recommendation Function
+// ------------------------
+Pump recommendPump(const CylinderTank& tank, const Pipe& pipe, 
+                   const vector<Pump>& pumps, float desired_fill_time_min) {
+    float required_flow = tank.capacity / desired_fill_time_min;
+
+    for (const auto& pump : pumps) {
+        float boosted_flow = pipe.flow() * pump.flow_boost_factor;
+        float effective_flow = min(boosted_flow, pump.max_gpm);
+
+        if (effective_flow >= required_flow) {
+            return pump; // suitable pump found
+        }
+    }
+
+    return Pump("No suitable pump", 0.0f);
+}
+
+// ------------------------
+// Main Function
+// ------------------------
 int main()
 {
-    float velocity_ft_s = 5.0f;   // Flow velocity in feet per second (ft/s)
+    float velocity_ft_s = 5.0f;   // Flow velocity in feet per second
     float filter_res = 0.10f;     // 10% flow reduction due to filter
 
     // ------------------------
-    // Pipes (no filter / with filter)
+    // Pipes
     // ------------------------
     Pipe p_1in{1, velocity_ft_s};                  
     Pipe p_1out{1, velocity_ft_s, filter_res};    
@@ -122,6 +160,18 @@ int main()
     Pipe p_4out{4, velocity_ft_s, filter_res};    
 
     // ------------------------
+    // Available Pumps with Boost Factors
+    // ------------------------
+    vector<Pump> availablePumps = {
+        Pump("Pump Small", 50.0f, 2.0f),    // 2x flow boost
+        Pump("Pump Medium", 200.0f, 2.5f),  // 2.5x boost
+        Pump("Pump Large", 500.0f, 3.0f),   // 3x boost
+        Pump("Pump X-Large", 1000.0f, 3.5f) // 3.5x boost
+    };
+
+    float desired_fill_time = 30.0f; // minutes target fill time
+
+    // ------------------------
     // Tank 2k
     // ------------------------
     CylinderTank t_2k{2000, 8.0f, 5.3f};
@@ -129,9 +179,13 @@ int main()
     t_2k.printCylinderTankDetails();
 
     t_2k.printFillTime(p_1in);
+    cout << "  Recommended Pump: " << recommendPump(t_2k, p_1in, availablePumps, desired_fill_time).name << endl;
     t_2k.printFillTime(p_2in);
+    cout << "  Recommended Pump: " << recommendPump(t_2k, p_2in, availablePumps, desired_fill_time).name << endl;
     t_2k.printFillTime(p_3in);
+    cout << "  Recommended Pump: " << recommendPump(t_2k, p_3in, availablePumps, desired_fill_time).name << endl;
     t_2k.printFillTime(p_4in);
+    cout << "  Recommended Pump: " << recommendPump(t_2k, p_4in, availablePumps, desired_fill_time).name << endl;
 
     t_2k.printDrainTime(p_1out);
     t_2k.printDrainTime(p_2out);
@@ -147,9 +201,13 @@ int main()
     t_5k.printCylinderTankDetails();
 
     t_5k.printFillTime(p_1in);
+    cout << "  Recommended Pump: " << recommendPump(t_5k, p_1in, availablePumps, desired_fill_time).name << endl;
     t_5k.printFillTime(p_2in);
+    cout << "  Recommended Pump: " << recommendPump(t_5k, p_2in, availablePumps, desired_fill_time).name << endl;
     t_5k.printFillTime(p_3in);
+    cout << "  Recommended Pump: " << recommendPump(t_5k, p_3in, availablePumps, desired_fill_time).name << endl;
     t_5k.printFillTime(p_4in);
+    cout << "  Recommended Pump: " << recommendPump(t_5k, p_4in, availablePumps, desired_fill_time).name << endl;
 
     t_5k.printDrainTime(p_1out);
     t_5k.printDrainTime(p_2out);
@@ -165,9 +223,13 @@ int main()
     t_10k.printCylinderTankDetails();
 
     t_10k.printFillTime(p_1in);
+    cout << "  Recommended Pump: " << recommendPump(t_10k, p_1in, availablePumps, desired_fill_time).name << endl;
     t_10k.printFillTime(p_2in);
+    cout << "  Recommended Pump: " << recommendPump(t_10k, p_2in, availablePumps, desired_fill_time).name << endl;
     t_10k.printFillTime(p_3in);
+    cout << "  Recommended Pump: " << recommendPump(t_10k, p_3in, availablePumps, desired_fill_time).name << endl;
     t_10k.printFillTime(p_4in);
+    cout << "  Recommended Pump: " << recommendPump(t_10k, p_4in, availablePumps, desired_fill_time).name << endl;
 
     t_10k.printDrainTime(p_1out);
     t_10k.printDrainTime(p_2out);
@@ -183,9 +245,13 @@ int main()
     t_15k.printCylinderTankDetails();
 
     t_15k.printFillTime(p_1in);
+    cout << "  Recommended Pump: " << recommendPump(t_15k, p_1in, availablePumps, desired_fill_time).name << endl;
     t_15k.printFillTime(p_2in);
+    cout << "  Recommended Pump: " << recommendPump(t_15k, p_2in, availablePumps, desired_fill_time).name << endl;
     t_15k.printFillTime(p_3in);
+    cout << "  Recommended Pump: " << recommendPump(t_15k, p_3in, availablePumps, desired_fill_time).name << endl;
     t_15k.printFillTime(p_4in);
+    cout << "  Recommended Pump: " << recommendPump(t_15k, p_4in, availablePumps, desired_fill_time).name << endl;
 
     t_15k.printDrainTime(p_1out);
     t_15k.printDrainTime(p_2out);
@@ -201,9 +267,13 @@ int main()
     t_20k.printCylinderTankDetails();
 
     t_20k.printFillTime(p_1in);
+    cout << "  Recommended Pump: " << recommendPump(t_20k, p_1in, availablePumps, desired_fill_time).name << endl;
     t_20k.printFillTime(p_2in);
+    cout << "  Recommended Pump: " << recommendPump(t_20k, p_2in, availablePumps, desired_fill_time).name << endl;
     t_20k.printFillTime(p_3in);
+    cout << "  Recommended Pump: " << recommendPump(t_20k, p_3in, availablePumps, desired_fill_time).name << endl;
     t_20k.printFillTime(p_4in);
+    cout << "  Recommended Pump: " << recommendPump(t_20k, p_4in, availablePumps, desired_fill_time).name << endl;
 
     t_20k.printDrainTime(p_1out);
     t_20k.printDrainTime(p_2out);
